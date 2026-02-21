@@ -47,6 +47,17 @@ const analyzeSentiment = (text) => {
     return { sentiment, confidenceScore, detectedKeywords: [...new Set(detectedKeywords)] };
 };
 
+// Analyze Sentiment (Preview - No Save)
+router.post('/analyze-preview', verifyToken, async (req, res) => {
+    try {
+        const { text } = req.body;
+        const analysis = analyzeSentiment(text);
+        res.json(analysis);
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // Create Feedback
 router.post('/', verifyToken, async (req, res) => {
     try {
