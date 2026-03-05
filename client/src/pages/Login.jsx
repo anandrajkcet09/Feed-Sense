@@ -6,13 +6,14 @@ import { MessageSquare } from 'lucide-react';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const res = await login(email, password);
+        const res = await login(email, password, rememberMe);
         if (res.success) {
             navigate('/');
         } else {
@@ -59,6 +60,20 @@ const Login = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
+                    </div>
+
+                    <div className="flex items-center">
+                        <input
+                            id="remember-me"
+                            name="remember-me"
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded cursor-pointer"
+                        />
+                        <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 cursor-pointer">
+                            Remember me (keep me logged in after closing browser)
+                        </label>
                     </div>
 
                     <button

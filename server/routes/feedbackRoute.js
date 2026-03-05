@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Feedback = require('../models/Feedback');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
@@ -17,42 +18,21 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-// Mock Sentiment Analysis Function
-const analyzeSentiment = (text) => {
-    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'happy', 'love', 'best'];
-    const negativeWords = ['bad', 'terrible', 'worst', 'hate', 'sad', 'angry', 'poor'];
-
-    let score = 0;
-    const words = text.toLowerCase().split(/\s+/);
-    const detectedKeywords = [];
-
-    words.forEach(word => {
-        if (positiveWords.includes(word)) {
-            score++;
-            detectedKeywords.push(word);
-        }
-        else if (negativeWords.includes(word)) {
-            score--;
-            detectedKeywords.push(word);
-        }
-    });
-
-    let sentiment = 'Neutral';
-    if (score > 0) sentiment = 'Positive';
-    if (score < 0) sentiment = 'Negative';
-
-    // Mock confidence (random between 70-99 for realism)
-    const confidenceScore = Math.floor(Math.random() * (99 - 70 + 1)) + 70;
-
-    return { sentiment, confidenceScore, detectedKeywords: [...new Set(detectedKeywords)] };
-};
+const ML_SERVICE_URL = 'http://localhost:5001/predict';
 
 // Analyze Sentiment (Preview - No Save)
 router.post('/analyze-preview', verifyToken, async (req, res) => {
     try {
         const { text } = req.body;
-        const analysis = analyzeSentiment(text);
-        res.json(analysis);
+
+        // Call Python ML Service
+        try {
+            const mlResponse = await axios.post(ML_SERVICE_URL, { text });
+            res.json(mlResponse.data);
+        } catch (mlError) {
+            console.error("ML Service Error (Preview):", mlError.message);
+            res.status(503).json({ message: 'Sentiment Analysis Service Unavailable' });
+        }
     } catch (err) {
         res.status(500).json({ message: 'Server Error' });
     }
@@ -62,12 +42,30 @@ router.post('/analyze-preview', verifyToken, async (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
     try {
         const { text } = req.body;
-        const analysis = analyzeSentiment(text);
+
+        // Call Python ML Service
+        let sentimentData = {
+            sentiment: 'Neutral',
+            confidenceScore: 0,
+            detectedKeywords: []
+        };
+
+        try {
+            const mlResponse = await axios.post(ML_SERVICE_URL, { text });
+            sentimentData = {
+                sentiment: mlResponse.data.sentiment,
+                confidenceScore: mlResponse.data.confidenceScore,
+                detectedKeywords: mlResponse.data.detectedKeywords
+            };
+        } catch (mlError) {
+            console.error("ML Service Error (Create):", mlError.message);
+            return res.status(503).json({ message: 'Sentiment Analysis Service Unavailable' });
+        }
 
         const feedback = await Feedback.create({
             user: req.user.id,
             text,
-            ...analysis
+            ...sentimentData
         });
 
         res.status(201).json(feedback);

@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 
 const UserDashboard = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, getToken } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [text, setText] = useState('');
     const [result, setResult] = useState(null);
@@ -28,7 +28,7 @@ const UserDashboard = () => {
             if (text.trim().length > 5) {
                 setPreviewLoading(true);
                 try {
-                    const token = localStorage.getItem('token');
+                    const token = getToken();
                     const res = await axios.post('http://localhost:5000/api/feedback/analyze-preview', { text }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -48,7 +48,7 @@ const UserDashboard = () => {
 
     const fetchHistory = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const res = await axios.get('http://localhost:5000/api/feedback/my-feedback', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -64,7 +64,7 @@ const UserDashboard = () => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const res = await axios.post('http://localhost:5000/api/feedback', { text }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -102,7 +102,7 @@ const UserDashboard = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
             {/* Header */}
-            <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+            <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 sm:px-8 py-4 flex justify-between items-center sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <div className="bg-blue-600 p-2 rounded-lg text-white">
                         <MessageSquare size={24} />
@@ -130,8 +130,8 @@ const UserDashboard = () => {
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
 
                     {/* Left Column - Input */}
                     <div className="lg:col-span-2 space-y-8">
