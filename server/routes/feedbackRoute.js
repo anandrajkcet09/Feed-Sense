@@ -18,7 +18,7 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-const ML_SERVICE_URL = 'http://localhost:5001/predict';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001/predict';
 
 // Analyze Sentiment (Preview - No Save)
 router.post('/analyze-preview', verifyToken, async (req, res) => {

@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run ml-service\"",
     "server": "cd server && npm run dev",
-    "client": "cd client && npm run dev"
+    "client": "cd client && npm run dev",
+    "ml-service": "cd ml-service && ../.venv/bin/python main.py"
   },
   "keywords": [],
   "author": "",

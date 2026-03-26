@@ -36,7 +36,7 @@ import {
 } from 'recharts';
 
 const AdminDashboard = () => {
-    const { logout } = useAuth();
+    const { logout, getToken } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
