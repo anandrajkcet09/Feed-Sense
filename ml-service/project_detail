@@ -1,0 +1,113 @@
+# FeedSense: Project Detail Documentation
+
+## Overview
+**FeedSense** is a comprehensive, full-stack Sentiment Analysis System designed to evaluate user feedback and reviews in real-time. It provides actionable insights by analyzing the sentiment (Positive, Negative, Neutral) of text inputs, calculating a confidence score, and identifying key words that strongly influenced the sentiment.
+
+The project is built using a modern microservices-inspired architecture, divided into three main components:
+1. **Client (Frontend)**: A React-based Single Page Application (SPA).
+2. **Server (Backend API)**: A Node.js/Express REST API serving as the main gateway and database interface.
+3. **ML Service (Model API)**: A Python/FastAPI service dedicated strictly to running the sentiment analysis model.
+
+---
+
+## Technical Stack
+
+### 1. Frontend (Client)
+- **Framework**: React 19 (via Vite)
+- **Styling**: Tailwind CSS 4
+- **Routing**: React Router DOM
+- **State/Data Fetching**: Axios (for HTTP requests), React Context API (for Auth & Theme)
+- **Data Visualization**: Recharts (for Sentiment Distribution Charts)
+- **Icons & UI Notifications**: Lucide React, React Hot Toast
+
+### 2. Backend (Server)
+- **Runtime & Framework**: Node.js with Express.js
+- **Database**: MongoDB (managed via Mongoose ODM)
+- **Authentication**: JSON Web Tokens (JWT) & bcrypt.js (Password Hashing)
+- **Inter-service Communication**: Axios used to proxy text to the ML Service.
+
+### 3. Machine Learning Service (ml-service)
+- **Framework**: FastAPI (Python 3) & Uvicorn (ASGI server)
+- **NLP Model**: VADER (Valence Aware Dictionary and sEntiment Reasoner) `vaderSentiment` package.
+- **Data Validation**: Pydantic models.
+
+---
+
+## How It Works (System Architecture & Data Flow)
+
+The system operates by decoupling the heavy natural language processing tasks from the main CRUD operations and user management logic.
+
+### End-to-End Flow Diagram
+```mermaid
+sequenceDiagram
+    participant User as User (Browser)
+    participant Client as React Client (Port 5173/3000)
+    participant Server as Node.js Server (Port 5000)
+    participant DB as MongoDB
+    participant ML as FastAPI ML Service (Port 5001)
+
+    User->>Client: Types text in Feedback Input
+    
+    %% Real-time preview flow
+    Client->>Server: POST /api/feedback/analyze-preview (text)
+    Server->>ML: POST /predict (text)
+    ML-->>Server: JSON {sentiment, confidenceScore, detectedKeywords}
+    Server-->>Client: Returns Sentiment Result
+    Client-->>User: Displays real-time preview tag
+    
+    %% Submission flow
+    User->>Client: Clicks "Analyze Sentiment" (Submit)
+    Client->>Server: POST /api/feedback (text + Auth Header)
+    Server->>ML: POST /predict (text)
+    ML-->>Server: JSON {sentiment, confidenceScore, detectedKeywords}
+    Server->>DB: Save User ID, Text, and Sentiment Data
+    DB-->>Server: Returns saved Feedback document
+    Server-->>Client: Returns saved Feedback object
+    Client-->>User: Updates Dashboard UI & Sentiment Chart
+```
+
+### Component Roles & Responsibilities
+
+#### 1. The React Client
+- Manages the user interface, including authentication (Login/Register), User Dashboard, and Admin Dashboard.
+- Features a debounced real-time preview system (waits 800ms after typing stops) to fetch preliminary sentiment analysis without saving it to the database.
+- Renders visual feedback (Emojis, color-coded tags, progress bars for confidence, and charts using `recharts`).
+- Guards routes based on user roles (`user` vs `admin`).
+
+#### 2. The Node.js Server
+- Acts as the primary API Gateway for the frontend.
+- Secures routes using JWT authentication middleware.
+- Connects to MongoDB to store user profiles and feedback history.
+- When an analysis request is received (either preview or actual submission), it forwards the textual data to the internal ML Service.
+- For actual submissions, it waits for the ML service to reply, bundles the AI response with the user's data, and stores the comprehensive record in MongoDB before returning the success response to the client.
+
+#### 3. The Python ML Service
+- Runs completely independently on port 5001.
+- Exposes a single crucial endpoint: `POST /predict`.
+- Uses **VADER Sentiment Analysis**, a lexicon and rule-based sentiment analysis tool that is specifically attuned to sentiments expressed in social media and short texts.
+- **Processing Logic**:
+  1. Calculates polarity scores: `neg`, `neu`, `pos`, and `compound` (-1.0 to 1.0).
+  2. Categorizes sentiment: 
+     - Positive (`compound >= 0.05`)
+     - Negative (`compound <= -0.05`)
+     - Neutral (between -0.05 and 0.05)
+  3. Calculates Confidence: Maps the absolute compound score (or neutral score) to a 0-100 percentage.
+  4. Keyword Detection: Splits the text, removes punctuation, and scores individual words. Words with an absolute compound score `>= 0.1` are flagged as Strongly Influencing Keywords.
+  5. Returns the structured JSON data promptly.
+
+---
+
+## Core Features
+1. **Real-time Sentiment Preview**: As the user types, the system fetches a quick prediction of the text's emotion using a debounced input mechanism.
+2. **Deep Feedback Analysis**: On submission, it provides the core Sentiment (Positive/Negative/Neutral), a precise Confidence Score percentage, and the exact Keywords that drove the sentiment result.
+3. **Historical Data Visualization**: Users and Admins can view past feedback analysis in a rich UI featuring history logs and visual charts representing sentiment distribution over time.
+4. **Role-Based Access Control (RBAC)**: Distinguishes between standard Users evaluating their own text and Admins viewing aggregate system data.
+5. **Theme Support**: Includes a robust Dark/Light mode toggle that modifies the entire UI via Tailwind CSS dark classes. 
+
+## Running the Application
+The application features a root `package.json` utilizing `concurrently` to run all three services simultaneously.
+- **Install dependencies**: `npm run install-all`
+- **Start all services**: `npm run dev`
+  - Client will map to localhost (usually port 5173).
+  - Server runs on `http://localhost:5000`.
+  - ML Service runs on `http://localhost:5001`.
