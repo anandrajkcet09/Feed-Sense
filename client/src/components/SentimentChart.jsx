@@ -1,6 +1,9 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useTheme } from '../context/ThemeContext';
 
 const SentimentChart = ({ data }) => {
+    const { theme } = useTheme();
+
     if (!data || data.length === 0) return null;
 
     const sentimentCounts = data.reduce((acc, curr) => {
@@ -10,7 +13,7 @@ const SentimentChart = ({ data }) => {
 
     const chartData = [
         { name: 'Positive', value: sentimentCounts['Positive'] || 0, color: '#16a34a' }, // green-600
-        { name: 'Neutral', value: sentimentCounts['Neutral'] || 0, color: '#2563eb' },  // blue-600
+        { name: 'Neutral',  value: sentimentCounts['Neutral']  || 0, color: '#2563eb' }, // blue-600
         { name: 'Negative', value: sentimentCounts['Negative'] || 0, color: '#dc2626' }  // red-600
     ].filter(item => item.value > 0);
 
@@ -33,10 +36,11 @@ const SentimentChart = ({ data }) => {
                     </Pie>
                     <Tooltip
                         contentStyle={{
-                            backgroundColor: 'white',
+                            backgroundColor: theme === 'dark' ? '#1e293b' : 'white',
                             borderRadius: '8px',
                             border: 'none',
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                            color: theme === 'dark' ? '#f8fafc' : '#0f172a'
                         }}
                     />
                     <Legend verticalAlign="bottom" height={36} />

@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
 
             if (token && storedUser) {
                 try {
-                    const res = await axios.get('http://localhost:5000/api/auth/verify', {
+                    const res = await axios.get('/api/auth/verify', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     if (res.data.valid) {
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, rememberMe) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+            const res = await axios.post('/api/auth/login', { email, password });
             const { token, user } = res.data;
 
             if (rememberMe) {
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (fullName, email, password, rememberMe) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/register', { fullName, email, password });
+            const res = await axios.post('/api/auth/register', { fullName, email, password });
             const { token, user } = res.data;
 
             if (rememberMe) {
