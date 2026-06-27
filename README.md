@@ -1,6 +1,6 @@
-# FeedSense Backend API
+# FeedSense Frontend
 
-FastAPI-based sentiment analysis backend for the FeedSense application.
+React + Vite frontend for the FeedSense sentiment analysis application.
 
 ## Setup
 
@@ -12,17 +12,14 @@ npm install
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
 Required variables:
-- `MONGO_URI` - MongoDB connection string
-- `JWT_SECRET` - Secret key for JWT tokens
-- `ML_SERVICE_URL` - URL of the ML service (e.g., http://localhost:5001/predict)
-- `CLIENT_URL` - Frontend URL for CORS
+- `VITE_API_URL` - Backend API URL (default: http://localhost:5000)
 
 ### Run Locally
 
@@ -30,38 +27,32 @@ Required variables:
 npm run dev
 ```
 
-Server runs on `http://localhost:5000`
+App runs on `http://localhost:5173`
 
-## API Endpoints
+### Build for Production
 
-### Health Check
-- `GET /health` - Check server status
+```bash
+npm run build
+```
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/verify` - Verify JWT token
-
-### Feedback
-- `POST /api/feedback` - Create feedback with sentiment analysis
-- `POST /api/feedback/analyze-preview` - Analyze sentiment without saving
-- `GET /api/feedback/my-feedback` - Get user's feedbacks
-- `GET /api/feedback/all` - Get all feedbacks (admin only)
-- `DELETE /api/feedback/:id` - Delete feedback
+Output: `dist/` directory
 
 ## Deployment
 
 ### Render
 
 1. Push this repository to GitHub
-2. Create a new Web Service on Render
+2. Create a new Static Site on Render
 3. Connect your GitHub repository
-4. Set environment variables in Render dashboard
+4. Set `VITE_API_URL` to your backend URL (e.g., `https://feedsense-backend.onrender.com`)
 5. Deploy!
 
 ## Technologies
 
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT Authentication
-- Axios (for ML service calls)
+- React 19
+- Vite (fast build tool)
+- React Router (navigation)
+- Tailwind CSS (styling)
+- Axios (HTTP requests)
+- React Hot Toast (notifications)
+- Recharts (data visualization)
