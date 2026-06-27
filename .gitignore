@@ -1,7 +1,11 @@
-node_modules
+.venv
+__pycache__
+*.pyc
 .env
 .env.local
 .DS_Store
+*.log
+.pytest_cache
 dist
 build
-*.log
+*.egg-info
