@@ -1,53 +1,77 @@
-# FeedSense Backend API
+# FeedSense ML Service
 
-FastAPI-based sentiment analysis backend for the FeedSense application.
+Python FastAPI-based machine learning service for sentiment analysis using VADER.
 
 ## Setup
 
 ### Local Development
 
+#### Create Virtual Environment
+
 ```bash
-npm install
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+#### Install Dependencies
+
+```bash
+pip install -r requirements.txt
 ```
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Required variables:
-- `MONGO_URI` - MongoDB connection string
-- `JWT_SECRET` - Secret key for JWT tokens
-- `ML_SERVICE_URL` - URL of the ML service (e.g., http://localhost:5001/predict)
-- `CLIENT_URL` - Frontend URL for CORS
+Optional variables:
+- `PORT` - Service port (default: 5001)
+- `ALLOWED_ORIGINS` - CORS allowed origins (default: *)
 
 ### Run Locally
 
 ```bash
-npm run dev
+python main.py
 ```
 
-Server runs on `http://localhost:5000`
+Service runs on `http://localhost:5001`
 
 ## API Endpoints
 
 ### Health Check
-- `GET /health` - Check server status
+```
+GET /health
+```
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/verify` - Verify JWT token
+Returns service status.
 
-### Feedback
-- `POST /api/feedback` - Create feedback with sentiment analysis
-- `POST /api/feedback/analyze-preview` - Analyze sentiment without saving
-- `GET /api/feedback/my-feedback` - Get user's feedbacks
-- `GET /api/feedback/all` - Get all feedbacks (admin only)
-- `DELETE /api/feedback/:id` - Delete feedback
+### Sentiment Analysis
+```
+POST /predict
+Content-Type: application/json
+
+{
+  "text": "I love this product! It's amazing."
+}
+```
+
+**Response:**
+```json
+{
+  "sentiment": "Positive",
+  "confidenceScore": 95,
+  "detectedKeywords": ["love", "amazing"],
+  "debug_vader_scores": {
+    "neg": 0.0,
+    "neu": 0.33,
+    "pos": 0.67,
+    "compound": 0.9
+  }
+}
+```
 
 ## Deployment
 
@@ -56,12 +80,26 @@ Server runs on `http://localhost:5000`
 1. Push this repository to GitHub
 2. Create a new Web Service on Render
 3. Connect your GitHub repository
-4. Set environment variables in Render dashboard
-5. Deploy!
+4. Runtime: Python 3.11
+5. Build Command: `pip install -r requirements.txt`
+6. Start Command: `uvicorn main:app --host 0.0.0.0 --port 10001`
+7. Deploy!
 
 ## Technologies
 
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT Authentication
-- Axios (for ML service calls)
+- FastAPI (modern web framework)
+- Uvicorn (ASGI server)
+- VADER Sentiment (lexicon-based sentiment analysis)
+- Pydantic (data validation)
+
+## How It Works
+
+The service uses VADER (Valence Aware Dictionary and sEntiment Reasoner) to analyze sentiment:
+
+- **Positive**: compound score ≥ 0.05
+- **Negative**: compound score ≤ -0.05
+- **Neutral**: compound score between -0.05 and 0.05
+
+Confidence is calculated as:
+- For positive/negative: |compound score| × 100
+- For neutral: neutral probability × 100
