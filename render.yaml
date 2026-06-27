@@ -1,50 +1,22 @@
 services:
-  # Backend API Service
   - type: web
-    name: feed-sense-server
+    name: feedsense-backend
     env: node
     plan: free
     branch: main
-    repo: https://github.com/anandrajkcet09/Feed-Sense
-    rootDir: server
+    repo: https://github.com/anandrajkcet09/Feed-Sense-Backend
     buildCommand: npm ci
-    startCommand: node index.js
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: JWT_SECRET
-        scope: project
       - key: MONGO_URI
         scope: project
+      - key: JWT_SECRET
+        scope: project
+      - key: ML_SERVICE_URL
+        scope: project
       - key: CLIENT_URL
-        value: https://feed-sense-frontend.onrender.com,https://feed-sense-ml-service.onrender.com
-
-  # ML Service (Python)
-  - type: web
-    name: feed-sense-ml-service
-    env: python
-    pythonVersion: 3.11
-    plan: free
-    branch: main
-    repo: https://github.com/anandrajkcet09/Feed-Sense
-    rootDir: ml-service
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10001
-    envVars:
-      - key: PORT
-        value: 10001
-
-  # Frontend Static Site
-  - type: static_site
-    name: feed-sense-frontend
-    plan: free
-    branch: main
-    repo: https://github.com/anandrajkcet09/Feed-Sense
-    rootDir: client
-    buildCommand: npm ci && npm run build
-    publishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://feed-sense-server.onrender.com
+        scope: project
