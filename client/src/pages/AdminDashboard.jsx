@@ -48,14 +48,10 @@ const AdminDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [sentimentFilter, setSentimentFilter] = useState('All');
 
-    useEffect(() => {
-        fetchFeedbacks();
-    }, []);
-
     const fetchFeedbacks = async () => {
         try {
             const token = getToken();
-            const res = await axios.get('http://localhost:5000/api/feedback/all', {
+            const res = await axios.get('/api/feedback/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFeedbacks(res.data);
@@ -65,6 +61,10 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchFeedbacks();
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -109,13 +109,12 @@ const AdminDashboard = () => {
     // Top Performing & Averages
     const topPerforming = useMemo(() => {
         if (!feedbacks.length) return null;
-        let highest = feedbacks[0];
-        feedbacks.forEach(f => {
-            if (f.sentiment === 'Positive' && f.confidenceScore > (highest.sentiment === 'Positive' ? highest.confidenceScore : 0)) {
-                highest = f;
-            }
-        });
-        return highest;
+        // Only consider Positive-sentiment feedback for "top performing"
+        const positiveFeedbacks = feedbacks.filter(f => f.sentiment === 'Positive');
+        if (!positiveFeedbacks.length) return null;
+        return positiveFeedbacks.reduce((best, f) =>
+            f.confidenceScore > best.confidenceScore ? f : best
+        );
     }, [feedbacks]);
 
     const averageConfidence = totalFeedback > 0
@@ -144,20 +143,26 @@ const AdminDashboard = () => {
     });
 
     const handleExportCSV = () => {
+        // Properly escape a value for CSV (wrap all fields in double-quotes)
+        const escapeCSV = (val) => {
+            if (val === null || val === undefined) return '""';
+            return '"' + String(val).replace(/"/g, '""') + '"';
+        };
+
         const headers = ["ID", "User", "Email", "Feedback", "Sentiment", "Confidence", "Date", "Keywords"];
         const rows = filteredFeedbacks.map(f => [
-            f._id,
-            f.user?.fullName || 'Anonymous',
-            f.user?.email || 'N/A',
-            `"${f.text.replace(/"/g, '""')}"`, // escape quotes for CSV
-            f.sentiment,
-            f.confidenceScore,
-            new Date(f.createdAt).toISOString(),
-            (f.detectedKeywords || []).join(';')
+            escapeCSV(f._id),
+            escapeCSV(f.user?.fullName || 'Anonymous'),
+            escapeCSV(f.user?.email || 'N/A'),
+            escapeCSV(f.text),
+            escapeCSV(f.sentiment),
+            escapeCSV(f.confidenceScore),
+            escapeCSV(new Date(f.createdAt).toISOString()),
+            escapeCSV((f.detectedKeywords || []).join(';'))
         ]);
 
         const csvContent = "data:text/csv;charset=utf-8,"
-            + headers.join(",") + "\n"
+            + headers.map(escapeCSV).join(",") + "\n"
             + rows.map(e => e.join(",")).join("\n");
 
         const encodedUri = encodeURI(csvContent);
@@ -276,9 +281,6 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-3">
                     <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300 font-medium shadow-sm">
                         <Download size={18} /> Export CSV
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300 font-medium shadow-sm">
-                        <BarChart3 size={18} /> Export Summary
                     </button>
                 </div>
             </header>

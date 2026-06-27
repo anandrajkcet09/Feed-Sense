@@ -7,17 +7,22 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        setError('');
         const res = await login(email, password, rememberMe);
         if (res.success) {
             navigate('/');
         } else {
             setError(res.message);
+            setIsSubmitting(false);
         }
     };
 
@@ -78,9 +83,10 @@ const Login = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200"
+                        disabled={isSubmitting}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Sign In
+                        {isSubmitting ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
@@ -89,8 +95,8 @@ const Login = () => {
                 </div>
 
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg text-xs text-blue-800 text-center">
-                    <span className="font-bold">Demo:</span> Use 'admin@example.com' for Admin Dashboard or any other email for User Dashboard relative to register role.
-                    <br />(Password: whatever you set)
+                    <span className="font-bold">Demo:</span> Use <span className="font-mono font-semibold">admin@gmail.com</span> for Admin Dashboard, or register a new account for User Dashboard.
+                    <br />(Admin password: <span className="font-mono">admin123</span>)
                 </div>
             </div>
         </div>

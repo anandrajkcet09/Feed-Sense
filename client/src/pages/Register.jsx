@@ -8,17 +8,22 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { register } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        setError('');
         const res = await register(fullName, email, password, rememberMe);
         if (res.success) {
             navigate('/');
         } else {
             setError(res.message);
+            setIsSubmitting(false);
         }
     };
 
@@ -90,9 +95,10 @@ const Register = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200"
+                        disabled={isSubmitting}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Create Account
+                        {isSubmitting ? 'Creating account...' : 'Create Account'}
                     </button>
                 </form>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Send, MessageSquare, History, BarChart2, Moon, Sun, Loader2 } from 'lucide-react';
@@ -13,50 +13,56 @@ const UserDashboard = () => {
     const [text, setText] = useState('');
     const [result, setResult] = useState(null);
     const [previewResult, setPreviewResult] = useState(null);
+    const [previewError, setPreviewError] = useState(false);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [showAllHistory, setShowAllHistory] = useState(false);
     const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchHistory();
-    }, []);
 
     // Real-time Preview Effect
     useEffect(() => {
         const timer = setTimeout(async () => {
             if (text.trim().length > 5) {
                 setPreviewLoading(true);
+                setPreviewError(false);
                 try {
                     const token = getToken();
-                    const res = await axios.post('http://localhost:5000/api/feedback/analyze-preview', { text }, {
+                    const res = await axios.post('/api/feedback/analyze-preview', { text }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setPreviewResult(res.data);
                 } catch (err) {
-                    console.error("Preview error", err);
+                    console.error('Preview error', err);
+                    setPreviewResult(null);
+                    setPreviewError(true);
                 } finally {
                     setPreviewLoading(false);
                 }
             } else {
                 setPreviewResult(null);
+                setPreviewError(false);
             }
         }, 800); // 800ms debounce
 
         return () => clearTimeout(timer);
     }, [text]);
 
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         try {
             const token = getToken();
-            const res = await axios.get('http://localhost:5000/api/feedback/my-feedback', {
+            const res = await axios.get('/api/feedback/my-feedback', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistory(res.data);
         } catch (err) {
             console.error(err);
         }
-    };
+    }, [getToken]);
+
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
 
     const handleAnalyze = async (e) => {
         e.preventDefault();
@@ -65,7 +71,7 @@ const UserDashboard = () => {
         setLoading(true);
         try {
             const token = getToken();
-            const res = await axios.post('http://localhost:5000/api/feedback', { text }, {
+            const res = await axios.post('/api/feedback', { text }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResult(res.data);
@@ -149,7 +155,12 @@ const UserDashboard = () => {
                                         Analyzing...
                                     </div>
                                 )}
-                                {!previewLoading && previewResult && (
+                                {!previewLoading && previewError && (
+                                    <div className="px-3 py-1 rounded-full text-xs font-medium border text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800 animate-fade-in">
+                                        Preview unavailable
+                                    </div>
+                                )}
+                                {!previewLoading && !previewError && previewResult && (
                                     <div className={`px-3 py-1 rounded-full text-xs font-medium border animate-fade-in ${getSentimentColor(previewResult.sentiment)}`}>
                                         Preview: {previewResult.sentiment}
                                     </div>
@@ -188,19 +199,29 @@ const UserDashboard = () => {
                                 {history.length === 0 ? (
                                     <p className="text-slate-400 dark:text-slate-500 text-center py-4">No recent analysis found.</p>
                                 ) : (
-                                    history.slice(0, 5).map((item) => (
-                                        <div key={item._id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getSentimentColor(item.sentiment)}`}>
-                                                    {getSentimentEmoji(item.sentiment)} {item.sentiment}
-                                                </span>
-                                                <span className="text-xs text-slate-400 dark:text-slate-500">
-                                                    {new Date(item.createdAt).toLocaleTimeString()}
-                                                </span>
+                                    <>
+                                        {(showAllHistory ? history : history.slice(0, 5)).map((item) => (
+                                            <div key={item._id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getSentimentColor(item.sentiment)}`}>
+                                                        {getSentimentEmoji(item.sentiment)} {item.sentiment}
+                                                    </span>
+                                                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                                                        {new Date(item.createdAt).toLocaleTimeString()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-slate-700 dark:text-slate-300 text-sm line-clamp-2">{item.text}</p>
                                             </div>
-                                            <p className="text-slate-700 dark:text-slate-300 text-sm line-clamp-2">{item.text}</p>
-                                        </div>
-                                    ))
+                                        ))}
+                                        {history.length > 5 && (
+                                            <button
+                                                onClick={() => setShowAllHistory(prev => !prev)}
+                                                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline py-2"
+                                            >
+                                                {showAllHistory ? 'Show less ↑' : `Show all ${history.length} entries ↓`}
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
